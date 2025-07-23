@@ -515,11 +515,10 @@ def est_motion_perframe(
     --------
     estimate_motion : for detailed explanation of parameters
     """
-    sh = phase_cross_correlation(
+    sh, error, phasediff = phase_cross_correlation(
         src,
         dst,
         upsample_factor=upsample,
-        return_error=False,
     )
     if mesh_size is None:
         return -sh
