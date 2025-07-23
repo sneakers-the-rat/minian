@@ -1,7 +1,7 @@
 import functools as fct
 import itertools as itt
 import warnings
-from typing import Optional, Tuple
+from typing import Optional
 
 import cv2
 import dask as da
@@ -94,7 +94,7 @@ def estimate_motion(
         Amount of zero padding when checking for the quality of frames,
         specified in pixels. Only used if `circ_thres is not None`. See
         `circ_thres` for more detail. By default `100`.
-    mesh_size : Tuple[int, int], optional
+    mesh_size : tuple[int, int], optional
         Number of control points for the BSpline mesh in each dimension,
         specified in the order ("height", "width"). If not `None` then the
         experimental non-rigid motion estimation is enabled. By default `None`
@@ -179,7 +179,7 @@ def estimate_motion(
 
 def est_motion_part(
     varr: darr.Array, npart: int, chunk_nfm: int, alt_error=5, **kwargs
-) -> Tuple[darr.Array, darr.Array]:
+) -> tuple[darr.Array, darr.Array]:
     """
     Construct dask graph for the recursive motion estimation algorithm.
 
@@ -273,10 +273,10 @@ def est_motion_chunk(
     upsample=100,
     max_sh=100,
     circ_thres: Optional[float] = None,
-    mesh_size: Optional[Tuple[int, int]] = None,
+    mesh_size: Optional[tuple[int, int]] = None,
     niter=100,
     bin_thres: Optional[float] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Carry out motion estimation per chunk.
 
@@ -302,7 +302,7 @@ def est_motion_chunk(
     circ_thres : float, optional
         The circularity threshold to check whether a frame can serve as a good
         template for estimating motion. By default `None`.
-    mesh_size : Tuple[int, int], optional
+    mesh_size : tuple[int, int], optional
         Number of control points for the BSpline mesh in each dimension. By
         default `None`.
     niter : int, optional
@@ -378,8 +378,8 @@ def est_motion_chunk(
     prop_good = len(good_idxs) / len(good_fm)
     if prop_good < 0.9:
         warnings.warn(
-            "only {} of the frames are good."
-            "Consider lowering your circularity threshold".format(prop_good)
+            f"only {prop_good} of the frames are good."
+            "Consider lowering your circularity threshold"
         )
     # use good frame closest to center as template
     mid = good_idxs[np.abs(good_idxs - varr.shape[0] / 2).argmin()]
@@ -457,7 +457,7 @@ def est_motion_chunk(
         else:
             tmp = varr.mean(axis=0)
     else:
-        raise ValueError("does not understand aggregation: {}".format(aggregation))
+        raise ValueError(f"does not understand aggregation: {aggregation}")
     if alt_error:
         if varr.ndim > 3:
             tmp0 = varr[0][0]
@@ -479,7 +479,7 @@ def est_motion_perframe(
     upsample: int,
     src_ma: Optional[np.ndarray] = None,
     dst_ma: Optional[np.ndarray] = None,
-    mesh_size: Optional[Tuple[int, int]] = None,
+    mesh_size: Optional[tuple[int, int]] = None,
     niter=100,
 ) -> np.ndarray:
     """
@@ -499,7 +499,7 @@ def est_motion_perframe(
     dst_ma : np.ndarray, optional
         Boolean mask for `dst`. Only used if `mesh_size is not None`. By default
         `None`.
-    mesh_size : Tuple[int, int], optional
+    mesh_size : tuple[int, int], optional
         Number of control points for the BSpline mesh in each dimension. By
         default `None`.
     niter : int, optional
@@ -668,7 +668,7 @@ def get_mask(fm, bin_thres, bin_wnd):
 
 
 def apply_transform(
-    varr: xr.DataArray, trans: xr.DataArray, fill=0, mesh_size: Tuple[int, int] = None
+    varr: xr.DataArray, trans: xr.DataArray, fill=0, mesh_size: tuple[int, int] = None
 ) -> xr.DataArray:
     """
     Apply necessary transform to correct for motion.
@@ -688,7 +688,7 @@ def apply_transform(
     fill : int, optional
         Values used to fill in missing pixels (outside field of view). By default
         `0`.
-    mesh_size : Tuple[int, int], optional
+    mesh_size : tuple[int, int], optional
         `mesh_size` parameter used when estimating motion. Only used if
         `trans.ndim > 2`. If `None` and `trans.ndim > 2` then one will be
         computed using :func:`get_mesh_size`. By default `None`.
@@ -727,7 +727,7 @@ def transform_perframe(
     tx_coef: np.ndarray,
     fill=0,
     param: Optional[np.ndarray] = None,
-    mesh_size: Optional[Tuple[int, int]] = None,
+    mesh_size: Optional[tuple[int, int]] = None,
 ) -> np.ndarray:
     """
     Transform a single frame.
@@ -746,7 +746,7 @@ def transform_perframe(
     param : np.ndarray, optional
         Fixed parameters defining the BSpline transform. Only used if
         `tx_coef.ndim > 1`. By default `None`.
-    mesh_size : Tuple[int, int], optional
+    mesh_size : tuple[int, int], optional
         `mesh_size` parameter used to estimate motion. If `None` and
         `tx_coef.ndim > 1`, then one will be computed using
         :func:`get_mesh_size`. By default `None`.
@@ -770,7 +770,7 @@ def transform_perframe(
     return sitk.GetArrayFromImage(fm)
 
 
-def get_bspline_param(img: np.ndarray, mesh_size: Tuple[int, int]) -> np.ndarray:
+def get_bspline_param(img: np.ndarray, mesh_size: tuple[int, int]) -> np.ndarray:
     """
     Compute fixed parameters for the BSpline transform given a frame and mesh size.
 
@@ -778,7 +778,7 @@ def get_bspline_param(img: np.ndarray, mesh_size: Tuple[int, int]) -> np.ndarray
     ----------
     img : np.ndarray
         Input frame.
-    mesh_size : Tuple[int, int]
+    mesh_size : tuple[int, int]
         Number of control points for the BSpline mesh.
 
     Returns

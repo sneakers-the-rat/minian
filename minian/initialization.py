@@ -1,7 +1,7 @@
 import functools as fct
 import itertools as itt
 import os
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 import cv2
 import dask as da
@@ -192,7 +192,7 @@ def gmm_refine(
     n_components=2,
     valid_components=1,
     mean_mask=True,
-) -> Tuple[pd.DataFrame, xr.DataArray, GaussianMixture]:
+) -> tuple[pd.DataFrame, xr.DataArray, GaussianMixture]:
     """
     Filter seeds by fitting a GMM to peak-to-peak values.
 
@@ -282,7 +282,7 @@ def pnr_refine(
     thres: Union[float, str] = 1.5,
     q=(0.1, 99.9),
     med_wnd: Optional[int] = None,
-) -> Tuple[pd.DataFrame, xr.DataArray, Optional[GaussianMixture]]:
+) -> tuple[pd.DataFrame, xr.DataArray, Optional[GaussianMixture]]:
     """
     Filter seeds by thresholding peak-to-noise ratio.
 
@@ -389,7 +389,7 @@ def ptp_q(a: np.ndarray, q: tuple) -> float:
     a : np.ndarray
         Input array.
     q : tuple
-        Tuple specifying low and high percentile values.
+        tuple specifying low and high percentile values.
 
     Returns
     -------

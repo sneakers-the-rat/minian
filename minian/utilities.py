@@ -8,7 +8,7 @@ from os import listdir
 from os.path import isdir, isfile
 from os.path import join as pjoin
 from pathlib import Path
-from typing import Callable, List, Optional, Union
+from typing import Callable, Optional, Union
 from uuid import uuid4
 
 import _operator
@@ -78,7 +78,7 @@ def load_videos(
         `vlist`, and the list of DataArray before concatenation `varr_list`. The
         function should output another valide DataArray. In other words, the
         function should have signature `f(varr: xr.DataArray, vpath: str, vlist:
-        List[str], varr_list: List[xr.DataArray]) -> xr.DataArray`. By default
+        list[str], varr_list: list[xr.DataArray]) -> xr.DataArray`. By default
         `None`
 
     Returns
@@ -102,10 +102,10 @@ def load_videos(
     )
     if not vlist:
         raise FileNotFoundError(
-            "No data with pattern {}"
-            " found in the specified folder {}".format(pattern, vpath)
+            f"No data with pattern {pattern}"
+            f" found in the specified folder {vpath}"
         )
-    print("loading {} videos in folder {}".format(len(vlist), vpath))
+    print(f"loading {len(vlist)} videos in folder {vpath}")
 
     file_extension = os.path.splitext(vlist[0])[1]
     if file_extension in (".avi", ".mkv"):
@@ -271,7 +271,7 @@ def load_avi_perframe(fname: str, fid: int) -> np.ndarray:
     if ret:
         return np.flip(cv2.cvtColor(fm, cv2.COLOR_RGB2GRAY), axis=0)
     else:
-        print("frame read failed for frame {}".format(fid))
+        print(f"frame read failed for frame {fid}")
         return np.zeros((h, w))
 
 
@@ -346,10 +346,10 @@ def open_minian(
 
 def open_minian_mf(
     dpath: str,
-    index_dims: List[str],
+    index_dims: list[str],
     result_format="xarray",
     pattern=r"minian$",
-    sub_dirs: List[str] = [],
+    sub_dirs: list[str] = [],
     exclude=True,
     **kwargs,
 ) -> Union[xr.Dataset, pd.DataFrame]:
@@ -367,8 +367,8 @@ def open_minian_mf(
     ----------
     dpath : str
         The root folder containing all datasets to be loaded.
-    index_dims : List[str]
-        List of dimensions that can be used to index and merge multiple
+    index_dims : list[str]
+        list of dimensions that can be used to index and merge multiple
         datasets. All loaded datasets should have unique coordinates in the
         listed dimensions.
     result_format : str, optional
@@ -381,7 +381,7 @@ def open_minian_mf(
         pointing to the loaded minian dataset objects. By default `"xarray"`.
     pattern : regexp, optional
         Pattern of minian dataset directory names. By default `r"minian$"`.
-    sub_dirs : List[str], optional
+    sub_dirs : list[str], optional
         A list of sub-directories under `dpath`. Useful if only a subset of
         datasets under `dpath` should be recursively loaded. By default `[]`.
     exclude : bool, optional
@@ -408,24 +408,24 @@ def open_minian_mf(
         nextdir = os.path.abspath(nextdir)
         cur_path = Path(nextdir)
         dir_tag = bool(
-            (
+            
                 (any([Path(epath) in cur_path.parents for epath in sub_dirs]))
                 or nextdir in sub_dirs
-            )
+            
         )
         if exclude == dir_tag:
             continue
         flist = list(filter(lambda f: re.search(pattern, f), filelist + dirlist))
         if flist:
-            print("opening dataset under {}".format(nextdir))
+            print(f"opening dataset under {nextdir}")
             if len(flist) > 1:
-                warnings.warn("multiple dataset found: {}".format(flist))
+                warnings.warn(f"multiple dataset found: {flist}")
             fname = flist[-1]
-            print("opening {}".format(fname))
+            print(f"opening {fname}")
             minian = open_minian(dpath=os.path.join(nextdir, fname), **kwargs)
             key = tuple([np.array_str(minian[d].values) for d in index_dims])
             minian_dict[key] = minian
-            print(["{}: {}".format(d, v) for d, v in zip(index_dims, key)])
+            print([f"{d}: {v}" for d, v in zip(index_dims, key)])
 
     if result_format == "xarray":
         return xrconcat_recursive(minian_dict, index_dims)
@@ -434,7 +434,7 @@ def open_minian_mf(
         minian_df.index.set_names(index_dims, inplace=True)
         return minian_df.to_frame()
     else:
-        raise NotImplementedError("format {} not understood".format(result_format))
+        raise NotImplementedError(f"format {result_format} not understood")
 
 
 def save_minian(
@@ -551,7 +551,7 @@ def save_minian(
     return arr
 
 
-def xrconcat_recursive(var: Union[dict, list], dims: List[str]) -> xr.Dataset:
+def xrconcat_recursive(var: Union[dict, list], dims: list[str]) -> xr.Dataset:
     """
     Recursively concatenate `xr.DataArray` over multiple dimensions.
 
@@ -564,7 +564,7 @@ def xrconcat_recursive(var: Union[dict, list], dims: List[str]) -> xr.Dataset:
         identify each `xr.DataArray`. If a `list` then each `xr.DataArray`
         should contain valid coordinates for each dimensions specified in
         `dims`.
-    dims : List[str]
+    dims : list[str]
         Dimensions to be concatenated over.
 
     Returns
@@ -583,7 +583,7 @@ def xrconcat_recursive(var: Union[dict, list], dims: List[str]) -> xr.Dataset:
         elif type(var) is list:
             var_dict = {tuple([np.asscalar(v[d]) for d in dims]): v for v in var}
         else:
-            raise NotImplementedError("type {} not supported".format(type(var)))
+            raise NotImplementedError(f"type {type(var)} not supported")
         try:
             var_dict = {k: v.to_dataset() for k, v in var_dict.items()}
         except AttributeError:
@@ -612,7 +612,7 @@ def update_meta(dpath, pattern=r"^minian\.nc$", meta_dict=None, backend="netcdf"
         elif backend == "zarr":
             fnames = filter(lambda fn: re.search(pattern, fn), dirnames)
         else:
-            raise NotImplementedError("backend {} not supported".format(backend))
+            raise NotImplementedError(f"backend {backend} not supported")
         for fname in fnames:
             f_path = os.path.join(dirpath, fname)
             pathlist = os.path.normpath(dirpath).split(os.sep)
@@ -629,7 +629,7 @@ def update_meta(dpath, pattern=r"^minian\.nc$", meta_dict=None, backend="netcdf"
                 new_ds.to_netcdf(f_path, mode="a")
             elif backend == "zarr":
                 new_ds.to_zarr(f_path, mode="w")
-            print("updated: {}".format(f_path))
+            print(f"updated: {f_path}")
 
 
 def get_chk(arr: xr.DataArray) -> dict:
@@ -694,7 +694,7 @@ def get_optimal_chk(
     arr : xr.DataArray
         The input array to estimate for chunk size.
     dim_grp : list, optional
-        List of tuples specifying which dimensions are usually chunked together
+        list of tuples specifying which dimensions are usually chunked together
         during computation. For each tuple in the list, it is assumed that only
         dimensions in the tuple will be chunked while all other dimensions in
         the input `arr` will not be chunked. Each dimensions in the input `arr`
@@ -723,11 +723,11 @@ def get_optimal_chk(
         dg_dict = {d: "auto" for d in dg}
         dr_dict = {d: -1 for d in d_rest}
         dg_dict.update(dr_dict)
-        with da.config.set({"array.chunk-size": "{}MiB".format(csize)}):
+        with da.config.set({"array.chunk-size": f"{csize}MiB"}):
             arr_chk = arr.chunk(dg_dict)
         chk = get_chunksize(arr_chk)
         chk_compute.update({d: chk[d] for d in dg})
-    with da.config.set({"array.chunk-size": "{}MiB".format(csize)}):
+    with da.config.set({"array.chunk-size": f"{csize}MiB"}):
         arr_chk = arr.chunk({d: "auto" for d in dims})
     chk_store_da = get_chunksize(arr_chk)
     chk_store = dict()
@@ -757,7 +757,7 @@ def get_chunksize(arr: xr.DataArray) -> dict:
     return {d: s for d, s in zip(dims, sz)}
 
 
-def factors(x: int) -> List[int]:
+def factors(x: int) -> list[int]:
     """
     Compute all factors of an interger.
 
@@ -768,8 +768,8 @@ def factors(x: int) -> List[int]:
 
     Returns
     -------
-    factors : List[int]
-        List of factors of `x`.
+    factors : list[int]
+        list of factors of `x`.
     """
     return [i for i in range(1, x + 1) if x % i == 0]
 
@@ -813,7 +813,7 @@ FAST_FUNCTIONS = [
     darr.core._vindex_transpose,
 ]
 """
-List of fast functions that should be inlined during optimization.
+list of fast functions that should be inlined during optimization.
 
 See Also
 -------
@@ -867,9 +867,9 @@ def custom_arr_optimize(
     keys : list
         Output task keys.
     fast_funcs : list, optional
-        List of fast functions to be inlined. By default :const:`FAST_FUNCTIONS`.
+        list of fast functions to be inlined. By default :const:`FAST_FUNCTIONS`.
     inline_patterns : list, optional
-        List of patterns of task keys to be inlined. By default `[]`.
+        list of patterns of task keys to be inlined. By default `[]`.
     rename_dict : dict, optional
         Dictionary mapping old task keys to new ones. Only used during fusing of
         tasks. By default `None`.
@@ -877,7 +877,7 @@ def custom_arr_optimize(
         Dictionary mapping old task key substrings to new ones. Applied at the
         end of optimization to all task keys. By default `None`.
     keep_patterns : list, optional
-        List of patterns of task keys that should be preserved during
+        list of patterns of task keys that should be preserved during
         optimization. By default `[]`.
 
     Returns
@@ -948,7 +948,7 @@ def rewrite_key(key: Union[str, tuple], rwdict: dict) -> str:
     elif typ is str:
         k = key
     else:
-        raise ValueError("key must be either str or tuple: {}".format(key))
+        raise ValueError(f"key must be either str or tuple: {key}")
     for pat, repl in rwdict.items():
         k = re.sub(pat, repl, k)
     if typ is tuple:
@@ -970,7 +970,7 @@ def custom_fused_keys_renamer(
     Parameters
     ----------
     keys : list
-        List of task keys that should be fused together.
+        list of task keys that should be fused together.
     max_fused_key_length : int, optional
         Used to limit the maximum string length for each renamed key. If `None`,
         there is no limit. By default `120`.
@@ -1070,7 +1070,7 @@ def check_key(key: Union[str, tuple], pat: str) -> bool:
         return bool(re.search(pat, key[0]))
 
 
-def check_pat(key: Union[str, tuple], pat_ls: List[str]) -> bool:
+def check_pat(key: Union[str, tuple], pat_ls: list[str]) -> bool:
     """
     Check whether `key` contains any pattern in a list.
 
@@ -1078,8 +1078,8 @@ def check_pat(key: Union[str, tuple], pat_ls: List[str]) -> bool:
     ----------
     key : Union[str, tuple]
         Input key. If a `tuple` then the first element will be used to check.
-    pat_ls : List[str]
-        List of pattern to check.
+    pat_ls : list[str]
+        list of pattern to check.
 
     Returns
     -------
@@ -1092,7 +1092,7 @@ def check_pat(key: Union[str, tuple], pat_ls: List[str]) -> bool:
     return False
 
 
-def inline_pattern(dsk: dict, pat_ls: List[str], inline_constants: bool) -> dict:
+def inline_pattern(dsk: dict, pat_ls: list[str], inline_constants: bool) -> dict:
     """
     Inline tasks whose keys match certain patterns.
 
@@ -1100,8 +1100,8 @@ def inline_pattern(dsk: dict, pat_ls: List[str], inline_constants: bool) -> dict
     ----------
     dsk : dict
         Input dask graph.
-    pat_ls : List[str]
-        List of patterns to check.
+    pat_ls : list[str]
+        list of patterns to check.
     inline_constants : bool
         Whether to inline constants.
 
@@ -1139,9 +1139,9 @@ def custom_delay_optimize(
     keys : list
         Output task keys.
     fast_functions : list, optional
-        List of fast functions to be inlined. By default `[]`.
+        list of fast functions to be inlined. By default `[]`.
     inline_patterns : list, optional
-        List of patterns of task keys to be inlined. By default `[]`.
+        list of patterns of task keys to be inlined. By default `[]`.
 
     Returns
     -------
@@ -1170,7 +1170,7 @@ def unique_keys(keys: list) -> np.ndarray:
     Parameters
     ----------
     keys : list
-        List of dask keys.
+        list of dask keys.
 
     Returns
     -------
@@ -1195,7 +1195,7 @@ def get_keys_pat(pat: str, keys: list, return_all=False) -> Union[list, str]:
     pat : str
         Pattern to check.
     keys : list
-        List of keys to be filtered.
+        list of keys to be filtered.
     return_all : bool, optional
         Whether to return all keys matching `pat`. If `False` then only the
         first match will be returned. By default `False`.
@@ -1277,7 +1277,7 @@ def local_extreme(fm: np.ndarray, k: np.ndarray, etype="max", diff=0) -> np.ndar
     elif etype == "min":
         fm_ext = (fm == fm_min).astype(np.uint8)
     else:
-        raise ValueError("Don't understand {}".format(etype))
+        raise ValueError(f"Don't understand {etype}")
     return cv2.bitwise_and(fm_ext, fm_diff).astype(np.uint8)
 
 

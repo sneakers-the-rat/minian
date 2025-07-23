@@ -55,6 +55,11 @@ Documentation = "https://minian.readthedocs.io/"
 
 [project.scripts]
 minian-install = "minian.install:main"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.4.1",
+]
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
@@ -76,5 +81,10 @@ version_files = [
 target-version = "py39"
 select = ["UP"]
 fixable = ["ALL"]
+
+[tool.pytest.ini_options]
+testpaths = [
+  "minian/test"
+]
 
 

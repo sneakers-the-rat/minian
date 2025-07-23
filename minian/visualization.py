@@ -2,7 +2,7 @@ import functools as fct
 import itertools as itt
 import os
 from collections import OrderedDict
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 from uuid import uuid4
 
 import colorcet as cc
@@ -91,17 +91,17 @@ class VArrayViewer:
 
     def __init__(
         self,
-        varr: Union[xr.DataArray, List[xr.DataArray], xr.Dataset],
+        varr: Union[xr.DataArray, list[xr.DataArray], xr.Dataset],
         framerate=30,
         summary=["mean"],
-        meta_dims: List[str] = None,
+        meta_dims: list[str] = None,
         datashading=True,
         layout=False,
     ):
         """
         Parameters
         ----------
-        varr : Union[xr.DataArray, List[xr.DataArray], xr.Dataset]
+        varr : Union[xr.DataArray, list[xr.DataArray], xr.Dataset]
             Input array, list of arrays, or dataset to be visualized. Each array
             should contain dimensions "height", "width" and "frame". If a
             dataset, then the dimensions specified in `meta_dims` will be used
@@ -112,10 +112,10 @@ class VArrayViewer:
         framerate : int, optional
             The framerate of playback when using the toolbar. By default `30`.
         summary : list, optional
-            List of summary statistics to plot. The statistics should be one of
+            list of summary statistics to plot. The statistics should be one of
             `{"mean", "max", "min", "diff"}`. By default `["mean"]`.
-        meta_dims : List[str], optional
-            List of dimension names that can uniquely identify each input array
+        meta_dims : list[str], optional
+            list of dimension names that can uniquely identify each input array
             in `varr`. Only used if `varr` is a `xr.Dataset`. By default `None`.
         datashading : bool, optional
             Whether to use datashading on the summary statistics. By default
@@ -141,7 +141,7 @@ class VArrayViewer:
             self.ds = varr
         else:
             raise NotImplementedError(
-                "video array of type {} not supported".format(type(varr))
+                f"video array of type {type(varr)} not supported"
             )
         try:
             self.meta_dicts = OrderedDict(
@@ -179,7 +179,7 @@ class VArrayViewer:
             try:
                 summ = {k: summ_all[k] for k in summary}
             except KeyError:
-                print("{} Not understood for specifying summary".format(summary))
+                print(f"{summary} Not understood for specifying summary")
             if summ:
                 print("computing summary")
                 sum_list = []
@@ -509,7 +509,7 @@ class CNMFViewer:
         self.strm_f.add_subscriber(self.callback_f)
         self.strm_uid = Selection1D()
         self.strm_uid.add_subscriber(self.callback_uid)
-        Stream_usub = Stream.define("Stream_usub", usub=param.List())
+        Stream_usub = Stream.define("Stream_usub", usub=param.list())
         self.strm_usub = Stream_usub()
         self.strm_usub.add_subscriber(self.callback_usub)
         self.usub_sel = self.strm_usub.usub
@@ -715,7 +715,7 @@ class CNMFViewer:
         ntabs = np.ceil(len(cur_idxs) / 5)
         sub_idxs = np.array_split(cur_idxs, ntabs)
         idxs_dict = OrderedDict(
-            [("group{}".format(i), g.tolist()) for i, g in enumerate(sub_idxs)]
+            [(f"group{i}", g.tolist()) for i, g in enumerate(sub_idxs)]
         )
         def_idxs = list(idxs_dict.values())[0]
         wgt_grp = pnwgt.Select(
@@ -816,7 +816,7 @@ class CNMFViewer:
             sel.param.watch(cb, "value")
         wgt_check = {
             uid: pnwgt.Checkbox(
-                name="Unit ID: {}".format(uid), value=False, height=50, width=100
+                name=f"Unit ID: {uid}", value=False, height=50, width=100
             )
             for uid in usub
         }
@@ -1061,7 +1061,7 @@ class AlignViewer:
         sess = list(mappings["session"].columns)
         self.sess_rgb = {"r": sess[0], "g": sess[0], "b": sess[0]}
         wgt_sess = {
-            c: pnwgt.Select(name="session{}".format(c.upper()), options=sess)
+            c: pnwgt.Select(name=f"session{c.upper()}", options=sess)
             for c in ["r", "g", "b"]
         }
         for wname, w in wgt_sess.items():
@@ -1199,7 +1199,7 @@ class AlignViewer:
 
 def write_vid_blk(arr, vpath, options):
     uid = uuid4()
-    vname = "{}.mp4".format(uid)
+    vname = f"{uid}.mp4"
     fpath = os.path.join(vpath, vname)
     if len(arr.shape) == 2:
         arr = np.expand_dims(arr, axis=0)
@@ -1249,7 +1249,7 @@ def write_video(
     ffmpeg.output
     """
     if not vname:
-        vname = "{}.mp4".format(uuid4())
+        vname = f"{uuid4()}.mp4"
     fname = os.path.join(vpath, vname)
     if norm:
         arr_opt = fct.partial(
@@ -1266,7 +1266,7 @@ def write_video(
     arr = arr.clip(0, 255).astype(np.uint8)
     w, h = arr.sizes["width"], arr.sizes["height"]
     process = (
-        ffmpeg.input("pipe:", format="rawvideo", pix_fmt="gray", s="{}x{}".format(w, h))
+        ffmpeg.input("pipe:", format="rawvideo", pix_fmt="gray", s=f"{w}x{h}")
         .filter("pad", int(np.ceil(w / 2) * 2), int(np.ceil(h / 2) * 2))
         .output(fname, pix_fmt="yuv420p", vcodec="libx264", r=30, **options)
         .overwrite_output()
@@ -1288,7 +1288,7 @@ def concat_video_recursive(vlist, vname=None):
     vpath = os.path.dirname(vlist[0])
     streams = [ffmpeg.input(p) for p in vlist]
     if vname is None:
-        vname = "{}.mp4".format(uuid4())
+        vname = f"{uuid4()}.mp4"
     fpath = os.path.join(vpath, vname)
     ffmpeg.concat(*streams).output(fpath).run(overwrite_output=True)
     for vp in vlist:
@@ -1392,7 +1392,7 @@ def generate_videos(
 
 
 def datashade_ndcurve(
-    ovly: hv.NdOverlay, kdim: Optional[Union[str, List[str]]] = None, spread=False
+    ovly: hv.NdOverlay, kdim: Optional[Union[str, list[str]]] = None, spread=False
 ) -> hv.Overlay:
     """
     Apply datashading to an overlay of curves with legends.
@@ -1401,7 +1401,7 @@ def datashade_ndcurve(
     ----------
     ovly : hv.NdOverlay
         The input overlay of curves.
-    kdim : Union[str, List[str]], optional
+    kdim : Union[str, list[str]], optional
         Key dimensions of the overlay. If `None` then the first key dimension of
         `ovly` will be used. By default `None`.
     spread : bool, optional
@@ -1539,7 +1539,7 @@ def convolve_G(s: np.ndarray, g: np.ndarray) -> np.ndarray:
 
 def construct_pulse_response(
     g: np.ndarray, length=500
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Construct a model pulse response corresponding to certain AR coefficients.
 
@@ -1818,7 +1818,7 @@ def visualize_gmm_fit(
 def visualize_spatial_update(
     A_dict: dict,
     C_dict: dict,
-    kdims: Optional[Union[str, List[str]]] = None,
+    kdims: Optional[Union[str, list[str]]] = None,
     norm=True,
     datashading=True,
 ) -> hv.HoloMap:
@@ -1842,7 +1842,7 @@ def visualize_spatial_update(
         format as `A_dict`. The temporal activities of cells are not expected to
         change across different runs of spatial update, except the number of
         cells may be different due to dropping of cells in the update process.
-    kdims : Union[str, List[str]], optional
+    kdims : Union[str, list[str]], optional
         Names of key dimensions identifying the parameter space. Should have
         same length as the keys in `A_dict` and `C_dict`. If `None` then a
         dimension names "dummy" will be created and the visualization can be
@@ -1930,7 +1930,7 @@ def visualize_temporal_update(
     g_dict: dict,
     sig_dict: dict,
     A_dict: dict,
-    kdims: Optional[Union[str, List[str]]] = None,
+    kdims: Optional[Union[str, list[str]]] = None,
     norm=True,
     datashading=True,
 ) -> hv.HoloMap:
@@ -1972,7 +1972,7 @@ def visualize_temporal_update(
         `C_dict`. The spatial footprints of cells are note expected to change
         across different runs of temporal update, except the number of cells may
         be different due to dropping of cells in the update process.
-    kdims : Union[str, List[str]], optional
+    kdims : Union[str, list[str]], optional
         Names of key dimensions identifying the parameter space. Should have
         same length as the keys in `C_dict` etc. If `None` then a dimension
         names "dummy" will be created and the visualization can be used to
